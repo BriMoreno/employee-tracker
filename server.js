@@ -133,11 +133,58 @@ function addRole() {
       }
     }
   ])
-  
+  .then(function(input){
+    const dept = input.department;
+    db.query('SELECT * FROM DEPARTMENT', function(err, res){
+      if (err) throw (err);
+      let filterDept = res.filter(function(res){
+        return res.name == dept;
+      })
+     let id = filterDept[0].id;
+     let query = "INSERT INTO role (title, salary, department_id) VALUES(?, ?, ?)";
+     let values = [input.title, parseInt(input.salary), id]
+      console.log(values);
+        db.query(query, values,
+          function(err, res, fields){
+            console.log(`This role has been added ${(values[0]).toUpperCase()}.`)
+          }) 
+          viewRole()
+        })
+     })
   })
 }
 
-addEmploy()
+async function addEmploy(){
+  db.query('SELECT * FROM role', function(err, result){
+    if (err) throw (err);
+  inquirer.prompt([{
+    name: "firstName",
+    type: "input",
+    message: "What is the employee's first name?",
+  },
+  {
+    name: "lastName",
+    type: "input",
+    message: "What is the employee's last name",
+  },
+  {
+    name: "roleName",
+    type: "list",
+    message: "What role does the employee have?",
+    choices: function() {
+      roleArray = [];
+        result.forEach(result => {
+          roleArray.push(
+            result.title
+          );
+        })
+        return roleArray;
+    }
+  }
+])
+  .then
+})
+}
 updateEmploy()
 
 
