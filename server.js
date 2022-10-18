@@ -33,7 +33,7 @@ function menuItems() {
       "Exit"
     ]
   })
-  // if else loop to take to them to were they need and to end connection when they exit
+  // if else loop to take to them to were they need and to exit connection when they exit
   .then(function(selection) {
   if (selection.action === "View Departments"){
     viewDept();
@@ -50,7 +50,7 @@ function menuItems() {
   } else if (selection.action === "Update Employee Record"){
     updateEmploy();
   } else if (selection.action === "Exit"){
-    db.end();
+    db.exit();
   }
 
 })
@@ -68,8 +68,8 @@ function viewDept() {
 };
 
 function viewRole() {
-  var role = "SELECT * FROM role";
-  db.query(role, function(err,res){
+  var roles = "SELECT * FROM role";
+  db.query(roles, function(err,res){
     console.log(`--The Roles--`)
     res.forEach(role => {
       console.log(`ID: ${role.id} | Title: ${role.title} | Department ID: ${role.department_id}`)
@@ -141,14 +141,14 @@ function addRole() {
         return res.name == dept;
       })
      let id = filterDept[0].id;
-     let query = "INSERT INTO role (title, salary, department_id) VALUES(?, ?, ?)";
+     let insertValues = "INSERT INTO role (title, salary, department_id) VALUES(?, ?, ?)";
      let values = [input.title, parseInt(input.salary), id]
       console.log(values);
-        db.query(query, values,
+        db.query(insertValues, values,
           function(err, res, fields){
             console.log(`This role has been added ${(values[0]).toUpperCase()}.`)
           }) 
-          viewRole()
+          viewRole();
         })
      })
   })
@@ -182,18 +182,102 @@ async function addEmploy(){
     }
   }
 ])
-  .then
+  .then(function(input){
+    console.log(input);
+    const role = input.roleName;
+    db.query('SELECT * FROM role', function(err, res){
+      if (err) throw (err);
+      let filterRole = res.filter(function(res){
+        return res.title == role;
+      })
+      let roleId = filterRole[0].id;
+      db.query('SELECT * FROM employee', function(err, res){
+        inquirer.prompt([{
+          name:"manager",
+          type: "type",
+          message: "Who is their manager:",
+          choices: function(){
+            managerArray = [];
+            res.forEach(res => {
+              managerArray.push(res.last_name);
+            })
+            return managerArray;
+          }
+        }
+      ]).then(function(managerBool){
+        const manager = managerBool.manager;
+        db.query('SELECT * FROM employee', function(err, res){
+          if (err) throw (err);
+          let filterManager = res.filter(function(res){
+            return res.last_name == manager;
+          })
+          let managerId = filterManager[0].id;
+          console.log(managerBool);
+          let insertValues = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+          let values = [input.first_name, input.last_name, roleId,managerId]
+          console.log(values);
+           db.query(insertValues,values, function(err, res, fields){
+            console.log(`This employee has been added: ${(values[0])}.`)
+           })
+           viewEmploy();
+        })
+      })
+      })
+    })
+  })
 })
 }
-updateEmploy()
-
-
-// Default response for any other request (Not Found)
-app.use((req, res) => {
-  res.status(404).end();
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-};
+function updateEmploy() {
+  db.query('SELEC * FROM employee', function(err, result){
+    if (err) throw (err);
+    inquirer.prompt([{
+      name: "employName",
+      type: "list",
+      message: "Whose role is being changed: ",
+      choices: function(){
+        employArray = [];
+          result.forEach(result => {
+            employArray.push (result.last_name);
+          })
+          return employArray;
+      }
+    }
+  ])
+  .then(function(input){
+    console.log(input);
+    const name = input.employName;
+    db.query("SELECT * FROM role", function(err, res){
+      inquirer.prompt([{
+        name: "role",
+        type: "list",
+        message: "What is their new role?",
+        choices: function() {
+          roleArray = [];
+          res.forEach(res => {
+            roleArray.push(res.title);
+          })
+          return roleArray;
+        }
+      }
+    ]).then(function(newRole) {
+      const role = newRole.role;
+      console.log(newRole.role);
+  db.query('SELECT * FROM role WHERE title = ?', [role], function(err, res) {
+  if (err) throw (err);
+      let roleId = res[0].id;
+      let query = "UPDATE employee SET role_id ? WHERE last_name ?";
+      let values = [roleId, name]
+      console.log(values);
+       db.query(query, values,
+           function(err, res, fields) {
+           console.log(`You have updated ${name}'s role to ${role}.`)
+          })
+          viewEmploy();
+          })
+       })
+   })
+  })
+})
+}
+}
+ 
