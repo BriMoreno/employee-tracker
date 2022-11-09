@@ -1,4 +1,4 @@
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const inquirer = require('inquirer');
 
 var db = mysql.createConnection({
@@ -11,8 +11,9 @@ var db = mysql.createConnection({
   });
 
 
-  db.connect(function(err) {
+  db.connect(err => {
     if (err) throw err;
+    console.log("connected to business_db.")
     menuItems();
   });
 
