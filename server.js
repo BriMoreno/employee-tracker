@@ -4,7 +4,6 @@ const inquirer = require('inquirer');
 var db = mysql.createConnection({
 
     host: "localhost",
-    port: 3301,
     user: "root",
     password: "Bhjdfv12!@",
     database: "business_db"
